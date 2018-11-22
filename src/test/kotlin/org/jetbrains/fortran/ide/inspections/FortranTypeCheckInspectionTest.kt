@@ -316,14 +316,14 @@ class FortranTypeCheckInspectionTest()
 
     fun testAssignmentIntegerToInteger()  = checkByText("""
         program p
-        integer :: a = 1
+        integer a = 1
         a = -1
         end program
     """, true)
 
     fun testAssignmentIntegerArithmBinaryOperationToInteger()  = checkByText("""
         program p
-        integer :: a = 1
+        integer a = 1
         a = a + 3 * 2 - 8 / 19 - 0
         end program
     """, true)
@@ -580,4 +580,28 @@ class FortranTypeCheckInspectionTest()
 
     // TODO incorrect implicit do test
 
+    fun testSplitDeclarationIntegerArray() = checkByText("""
+        program p
+        integer :: a
+        dimension a(3)
+        a = (/1, 2, 3/)
+        end program
+    """, true)
+
+    fun testDeclarationArrayWithoutDimension() = checkByText("""
+        program p
+        integer a(3)
+        a = (/1, 2, 3/)
+        end program
+    """, true)
+
+    fun testSomeArrays() = checkByText("""
+        program p
+        integer a(3)
+        integer c
+        dimension c(3)
+        a = (/1, 2, 3/)
+        c = (/1, 2, 3/)
+        end program
+    """, true)
 }

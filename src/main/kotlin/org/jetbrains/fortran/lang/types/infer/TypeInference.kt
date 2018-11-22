@@ -406,11 +406,45 @@ class FortranInferenceContext(val element: FortranEntitiesOwner) {
         return FortranArrayType(FortranIntegerType, shape)
     }
 
+    private fun createFortranArrayType(primitiveType: FortranType,
+                                       shapeSpecList: List<FortranExplicitShapeSpec>) : FortranType {
+        val dimensions = mutableListOf<Pair<Int, Int>>()
+        for (explicitShapeSpec in shapeSpecList) {
+            val arrayBounds = explicitShapeSpec.exprList
+            when {
+                arrayBounds.size == 1 -> dimensions.add(1 to explicitShapeSpec.exprList[0].text.toInt())
+                explicitShapeSpec.exprList.size == 2 -> {
+                    val arrayStart = arrayBounds[0].text.toInt()
+                    val arrayEnd = arrayBounds[1].text.toInt()
+                    dimensions.add(arrayStart to arrayEnd)
+                }
+                else -> return FortranArrayType(primitiveType, FortranUnknownShape)
+            }
+        }
+        return FortranArrayType(primitiveType, FortranArrayShape(dimensions))
+    }
+
     private fun inferFortranDesignatorType(expr: FortranDesignator) : FortranType {
         val variableEntityDecl = expr.dataPath?.reference?.resolve() as? FortranEntityDecl ?: return FortranUnknownType
         val variableTypeDecl = variableEntityDecl.parent as FortranTypeDeclarationStmt
-        val variableType = processTypeDeclarationStatement(variableTypeDecl)
+        var variableType = processTypeDeclarationStatement(variableTypeDecl)
+        if (variableEntityDecl.explicitShapeSpecList.isNotEmpty()) {
+            variableType = createFortranArrayType(variableType, variableEntityDecl.explicitShapeSpecList)
+        }
+
+        val b = variableTypeDecl.parent as FortranBlock
+        for (stmt in b.declarationStmtList) {
+            if (stmt is FortranDimensionStmt) {
+                for (el in stmt.dataPathList) {
+                    if (el.referenceName === expr.dataPath?.referenceName) {
+                        variableType = createFortranArrayType(variableType, stmt.explicitShapeSpecList)
+                        break
+                    }
+                }
+            }
+        }
         // accessing array element instead of array
+        //???
         return if ((expr.dataPath as FortranDataPathImpl).getSectionSubscript() != null &&
                 variableType is FortranArrayType) {
             variableType.base
@@ -424,21 +458,7 @@ class FortranInferenceContext(val element: FortranEntitiesOwner) {
         if (primitiveType === FortranUnknownType) {
             return FortranUnknownType
         }
-        val dimensions = mutableListOf<Pair<Int, Int>>()
-        for (explicitShapeSpec in declarationStmt.attrSpecList[0].explicitShapeSpecList) {
-            val arrayBounds = explicitShapeSpec.exprList
-            when {
-                arrayBounds.size == 1 -> dimensions.add(1 to explicitShapeSpec.exprList[0].text.toInt())
-                explicitShapeSpec.exprList.size == 2 -> {
-                    val arrayStart = arrayBounds[0].text.toInt()
-                    val arrayEnd = arrayBounds[1].text.toInt()
-                    dimensions.add(arrayStart to arrayEnd)
-                }
-                else -> return FortranArrayType(primitiveType, FortranUnknownShape)
-            }
-        }
-
-        return FortranArrayType(primitiveType, FortranArrayShape(dimensions))
+        return createFortranArrayType(primitiveType, declarationStmt.attrSpecList[0].explicitShapeSpecList)
     }
 
     private fun combineTypes(expected: FortranType, inferred: FortranType): Boolean = when {
