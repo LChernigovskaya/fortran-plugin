@@ -426,7 +426,8 @@ class FortranInferenceContext(val element: FortranEntitiesOwner) {
 
     private fun inferFortranDesignatorType(expr: FortranDesignator) : FortranType {
         val variableEntityDecl = expr.dataPath?.reference?.resolve() as? FortranEntityDecl ?: return FortranUnknownType
-        val variableTypeDecl = variableEntityDecl.parent as FortranTypeDeclarationStmt
+        //TODO: more accurate handling
+        val variableTypeDecl = variableEntityDecl.parent as? FortranTypeDeclarationStmt ?: return FortranUnknownType
         var variableType = processTypeDeclarationStatement(variableTypeDecl)
         if (variableEntityDecl.explicitShapeSpecList.isNotEmpty()) {
             variableType = createFortranArrayType(variableType, variableEntityDecl.explicitShapeSpecList)
