@@ -33,12 +33,20 @@ class FortranInferenceContext(val element: FortranEntitiesOwner) {
     }
 
     private fun processTypeDeclarationStatement(typeDeclarationStmt: FortranTypeDeclarationStmt) : FortranType {
-        return if (!typeDeclarationStmt.attrSpecList.isEmpty() &&
-                typeDeclarationStmt.attrSpecList[0].text.substring(0, 9) == "dimension") {
-            inferFortranArrayType(typeDeclarationStmt)
-        } else {
-            FortranPrimitiveType.fromTypeSpec(typeDeclarationStmt)
+        if (!typeDeclarationStmt.attrSpecList.isEmpty()) {
+            typeDeclarationStmt.attrSpecList.forEach {
+                if (it.text.length > 9 && it.text.substring(0, 9) == "dimension") {
+                    return inferFortranArrayType(typeDeclarationStmt)
+                }
+            }
         }
+        return FortranPrimitiveType.fromTypeSpec(typeDeclarationStmt)
+//        return if (!typeDeclarationStmt.attrSpecList.isEmpty() &&
+//                typeDeclarationStmt.attrSpecList[0].text.substring(0, 9) == "dimension") {
+//            inferFortranArrayType(typeDeclarationStmt)
+//        } else {
+//            FortranPrimitiveType.fromTypeSpec(typeDeclarationStmt)
+//        }
     }
 
     private fun processVariable(entityDeclList: List<FortranEntityDecl>, expected: FortranType) {

@@ -1,6 +1,6 @@
 package org.jetbrains.fortran.ide.inspections
 
-class FortranTypeCheckInspectionTest()
+class FortranPrimitiveTypeCheckInspectionTest()
     : FortranInspectionsBaseTestCase(FortranTypeCheckInspection()) {
 
     fun testDeclarationIntegerToInteger()  = checkByText("""
@@ -519,89 +519,6 @@ class FortranTypeCheckInspectionTest()
     fun testDeclarationUnableToInferTypeToDoublePrecision() = checkByText("""
         program p
         double precision :: a = <warning descr="mismatched argument typesleft argument: double precision, right argument: character">1.1D0 + "0.1"</warning>
-        end program
-    """, true)
-
-    fun testDeclarationIntegerArray() = checkByText("""
-        program p
-        integer, dimension(3) :: a = (/1, 2, 3/)
-        end program
-    """, true)
-
-    fun testAssignmentIntegerArray() = checkByText("""
-        program p
-        integer, dimension(3) :: a
-        a = (/1, 2, 3/)
-        end program
-    """, true)
-
-    fun testDeclarationRealToIntegerArray() = checkByText("""
-        program p
-        integer, dimension(3) :: a
-        a = <warning descr="mismatched typesexpected `integer array of shape (1:3)`, found `real array of shape (1:3)`">(/1, 2, 3.1/)</warning>
-        end program
-    """, true)
-
-    fun testAssignmentIntegerToRealArray() = checkByText("""
-        program p
-        real, dimension(3) :: a
-        a = (/1, 2, 3/)
-        end program
-    """, true)
-
-    fun testAssignmentMalformedArrayConstructorToCharacterArray() = checkByText("""
-        program p
-        character, dimension(3) :: a
-        a = (/"a", <warning descr="mismatched array constructor element typearray base type: character, element type: integer">2</warning>, "c"/)
-        end program
-    """, true)
-
-    fun testAssignmentCorrectImplicitDo() = checkByText("""
-        program p
-        integer, dimension(3) :: a
-        a = (/(I, I = 4, 6)/)
-        end program
-    """, true)
-
-    fun testAssignmentWrongArraySize() = checkByText("""
-        program p
-        logical, dimension(3) :: a
-        a = <warning descr="mismatched typesexpected `logical array of shape (1:3)`, found `logical array of shape (1:2)`">(/.true., .false./)</warning>
-        end program
-    """, true)
-
-    fun testDoublePrecisionArray() = checkByText("""
-        program p
-        double precision, dimension(3) :: a
-        a = (/1, 1.0, 1.0D0/)
-        a = <warning descr="mismatched typesexpected `double precision array of shape (1:3)`, found `logical array of shape (1:3)`">(/.true., .false., .true./)</warning>
-        end program
-    """, true)
-
-    // TODO incorrect implicit do test
-
-    fun testSplitDeclarationIntegerArray() = checkByText("""
-        program p
-        integer :: a
-        dimension a(3)
-        a = (/1, 2, 3/)
-        end program
-    """, true)
-
-    fun testDeclarationArrayWithoutDimension() = checkByText("""
-        program p
-        integer a(3)
-        a = (/1, 2, 3/)
-        end program
-    """, true)
-
-    fun testSomeArrays() = checkByText("""
-        program p
-        integer a(3)
-        integer c
-        dimension c(3)
-        a = (/1, 2, 3/)
-        c = (/1, 2, 3/)
         end program
     """, true)
 }
